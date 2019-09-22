@@ -7,7 +7,7 @@
 #define RightPWM 10
 #define RightIN1 12
 #define RightIN2 11
-float speed = 30;
+float speed = 58;
 
 float calibrT = millis();
 
@@ -38,9 +38,9 @@ float MaxS7 = 0;
 float MinS8 = 1024;
 float MaxS8 = 0;
 
-float kP = 0.44;
+float kP = 0.4;
 float kI = 0;
-float kD = 600;
+float kD = 700;
 
 void setup() {
   pinMode(LeftPWM, OUTPUT);
@@ -56,19 +56,19 @@ void setup() {
 
 void log(String text) {
   #ifdef MYDEBUG
-    Serial.println(text);
+    Serial.print(text);
   #endif
 }
-
+float error_global;
 float I = 0;
 float LE = 0;
 float prevT = micros();
 float PID(float error) {
+  error_global = error;
   float P = error;
   I = I * (2.0 / 3.0) + error;
   float dT = (micros() - prevT) / 1000.0;
   float D = (error - LE) / dT;
-  LE = error;
   return (P * kP + I * kI + D * kD);
 }
 float sensor() {
@@ -165,6 +165,59 @@ float sensor() {
 }
 
 void Drive(float error) {
+  float Sensor1 = map(analogRead(Sens1), MinS1, MaxS1, 0, 100);
+  float Sensor2 = map(analogRead(Sens2), MinS2, MaxS2, 0, 100);
+  float Sensor3 = map(analogRead(Sens3), MinS3, MaxS3, 0, 100);
+  float Sensor4 = map(analogRead(Sens4), MinS4, MaxS4, 0, 100);
+  float Sensor5 = map(analogRead(Sens5), MinS5, MaxS5, 0, 100);
+  float Sensor6 = map(analogRead(Sens6), MinS6, MaxS6, 0, 100);
+  float Sensor7 = map(analogRead(Sens7), MinS7, MaxS7, 0, 100);
+  float Sensor8 = map(analogRead(Sens8), MinS8, MaxS8, 0, 100);
+  if (Sensor1 < 50 && Sensor2 < 50 && Sensor3 < 50 && Sensor4 < 50 && Sensor5 < 50 && Sensor6 < 50 && Sensor7 < 50 && Sensor8 < 50) {
+    
+    if (LE < 0) {
+      while(Sensor1 < 50 && Sensor2 < 50 && Sensor3 < 50 && Sensor4 < 50 && Sensor5 < 50 && Sensor6 < 50 && Sensor7 < 50 && Sensor8 < 50) {
+         Sensor1 = map(analogRead(Sens1), MinS1, MaxS1, 0, 100);
+         Sensor2 = map(analogRead(Sens2), MinS2, MaxS2, 0, 100);
+         Sensor3 = map(analogRead(Sens3), MinS3, MaxS3, 0, 100);
+         Sensor4 = map(analogRead(Sens4), MinS4, MaxS4, 0, 100);
+         Sensor5 = map(analogRead(Sens5), MinS5, MaxS5, 0, 100);
+         Sensor6 = map(analogRead(Sens6), MinS6, MaxS6, 0, 100);
+         Sensor7 = map(analogRead(Sens7), MinS7, MaxS7, 0, 100);
+         Sensor8 = map(analogRead(Sens8), MinS8, MaxS8, 0, 100);
+        analogWrite(LeftPWM,map(speed,0,100,0,255)); 
+        digitalWrite(LeftIN1,1);
+        digitalWrite(LeftIN2,0);
+        digitalWrite(RightIN1,1);
+        digitalWrite(RightIN2,1);
+        analogWrite(RightPWM,map(20 ,0,100,0,255));
+        //delay(100);
+      }
+      
+    
+    }
+    if (LE > 0) {
+      while(Sensor1 < 50 && Sensor2 < 50 && Sensor3 < 50 && Sensor4 < 50 && Sensor5 < 50 && Sensor6 < 50 && Sensor7 < 50 && Sensor8 < 50) {
+        Sensor1 = map(analogRead(Sens1), MinS1, MaxS1, 0, 100);
+         Sensor2 = map(analogRead(Sens2), MinS2, MaxS2, 0, 100);
+         Sensor3 = map(analogRead(Sens3), MinS3, MaxS3, 0, 100);
+         Sensor4 = map(analogRead(Sens4), MinS4, MaxS4, 0, 100);
+         Sensor5 = map(analogRead(Sens5), MinS5, MaxS5, 0, 100);
+         Sensor6 = map(analogRead(Sens6), MinS6, MaxS6, 0, 100);
+         Sensor7 = map(analogRead(Sens7), MinS7, MaxS7, 0, 100);
+         Sensor8 = map(analogRead(Sens8), MinS8, MaxS8, 0, 100);
+        analogWrite(RightPWM,map(speed ,0,100,0,255));
+        digitalWrite(RightIN1,1);
+        digitalWrite(RightIN2,0);
+        digitalWrite(LeftIN1,0);
+        analogWrite(LeftPWM,map(20 ,0,100,0,255));
+        digitalWrite(LeftIN2,1);
+        //delay(100);
+      }
+      
+    
+    }
+  } else {
   float left = speed - error;
   float right = speed + error;
   /*Serial.print(error);
@@ -204,6 +257,8 @@ void Drive(float error) {
     analogWrite(RightPWM, right);
     analogWrite(LeftPWM, left);
   #endif
+  }
+  
 }
 
 void calibrate () {
@@ -290,5 +345,6 @@ void loop() {
     I = 0; 
   } else {
     Drive(PID(sensor()));
+    LE = error_global;
   }
 }
